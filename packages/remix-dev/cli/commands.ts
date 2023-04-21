@@ -1,7 +1,6 @@
 import * as path from "path";
 import { execSync } from "child_process";
 import * as fse from "fs-extra";
-import ora from "ora";
 import prettyMs from "pretty-ms";
 import * as esbuild from "esbuild";
 import NPMCliPackageJson from "@npmcli/package-json";
@@ -14,7 +13,6 @@ import * as devServer_unstable from "../devServer_unstable";
 import type { RemixConfig } from "../config";
 import { readConfig } from "../config";
 import { formatRoutes, RoutesFormat, isRoutesFormat } from "../config/format";
-import { createApp } from "./create";
 import { getPreferredPackageManager } from "./getPreferredPackageManager";
 import { setupRemix, isSetupPlatform, SetupPlatform } from "./setup";
 import runCodemod from "../codemod";
@@ -22,37 +20,6 @@ import { CodemodError } from "../codemod/utils/error";
 import { TaskError } from "../codemod/utils/task";
 import { transpile as convertFileToJS } from "./useJavascript";
 import { warnOnce } from "../warnOnce";
-
-export async function create({
-  appTemplate,
-  projectDir,
-  remixVersion,
-  installDeps,
-  useTypeScript,
-  githubToken,
-  debug,
-}: {
-  appTemplate: string;
-  projectDir: string;
-  remixVersion?: string;
-  installDeps: boolean;
-  useTypeScript: boolean;
-  githubToken?: string;
-  debug?: boolean;
-}) {
-  let spinner = ora("Creating your app…").start();
-  await createApp({
-    appTemplate,
-    projectDir,
-    remixVersion,
-    installDeps,
-    useTypeScript,
-    githubToken,
-    debug,
-  });
-  spinner.stop();
-  spinner.clear();
-}
 
 type InitFlags = {
   deleteScript?: boolean;
@@ -63,17 +30,7 @@ export async function init(
   { deleteScript = true }: InitFlags = {}
 ) {
   let initScriptDir = path.join(projectDir, "remix.init");
-  let initScriptTs = path.resolve(initScriptDir, "index.ts");
   let initScript = path.resolve(initScriptDir, "index.js");
-
-  if (await fse.pathExists(initScriptTs)) {
-    await esbuild.build({
-      entryPoints: [initScriptTs],
-      format: "cjs",
-      platform: "node",
-      outfile: initScript,
-    });
-  }
   if (!(await fse.pathExists(initScript))) {
     return;
   }
